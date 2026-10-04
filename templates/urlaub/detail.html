@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Antrag #{{ antrag.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            <div class="mb-3">
+                <a href="{{ url_for('urlaub.meine_antraege') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Zurück
+                </a>
+            </div>
+
+            <div class="card glass-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text me-2 text-primary"></i>Urlaubsantrag #{{ antrag.id }}
+                    </h5>
+                    <span class="badge bg-{{ antrag_status_farbe(antrag.status) }} fs-6">
+                        {{ antrag.status|capitalize }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4 text-muted">Mitarbeiter</dt>
+                        <dd class="col-sm-8">{{ antrag.mitarbeiter.vollname }}</dd>
+
+                        <dt class="col-sm-4 text-muted">Abwesenheitsart</dt>
+                        <dd class="col-sm-8">
+                            <span class="color-dot me-1" style="background:{{ antrag.abwesenheitsart.farbe }}"></span>
+                            {{ antrag.abwesenheitsart.name }}
+                        </dd>
+
+                        <dt class="col-sm-4 text-muted">Von</dt>
+                        <dd class="col-sm-8">{{ antrag.datum_von.strftime('%A, %d. %B %Y') }}</dd>
+
+                        <dt class="col-sm-4 text-muted">Bis</dt>
+                        <dd class="col-sm-8">{{ antrag.datum_bis.strftime('%A, %d. %B %Y') }}</dd>
+
+                        <dt class="col-sm-4 text-muted">Arbeitstage</dt>
+                        <dd class="col-sm-8"><strong>{{ antrag.anzahl_tage|int }} Tage</strong></dd>
+
+                        <dt class="col-sm-4 text-muted">Eingereicht am</dt>
+                        <dd class="col-sm-8">{{ antrag.erstellt_am.strftime('%d.%m.%Y %H:%M') }}</dd>
+
+                        {% if antrag.genehmigt_von %}
+                        <dt class="col-sm-4 text-muted">Entschieden von</dt>
+                        <dd class="col-sm-8">{{ antrag.genehmigt_von.vollname }}</dd>
+                        {% endif %}
+
+                        {% if antrag.kommentar %}
+                        <dt class="col-sm-4 text-muted">Kommentar</dt>
+                        <dd class="col-sm-8">{{ antrag.kommentar }}</dd>
+                        {% endif %}
+
+                        {% if antrag.ablehnungsgrund %}
+                        <dt class="col-sm-4 text-muted">Ablehnungsgrund</dt>
+                        <dd class="col-sm-8 text-danger">{{ antrag.ablehnungsgrund }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+
+                {% if current_user.ist_manager and antrag.status == 'ausstehend' %}
+                <div class="card-footer d-flex gap-2">
+                    <form method="POST" action="{{ url_for('urlaub.genehmigen', antrag_id=antrag.id) }}" class="flex-grow-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check-circle me-2"></i>Genehmigen
+                        </button>
+                    </form>
+                    <a href="{{ url_for('urlaub.ablehnen', antrag_id=antrag.id) }}"
+                       class="btn btn-danger flex-grow-1">
+                        <i class="bi bi-x-circle me-2"></i>Ablehnen
+                    </a>
+                </div>
+                {% elif antrag.mitarbeiter_id == current_user.mitarbeiter.id
+                        and antrag.status in ('ausstehend', 'genehmigt') %}
+                <div class="card-footer">
+                    <form method="POST" action="{{ url_for('urlaub.stornieren', antrag_id=antrag.id) }}"
+                          onsubmit="return confirm('Antrag wirklich stornieren?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-x-circle me-2"></i>Antrag stornieren
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

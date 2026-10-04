@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ titel }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="mb-3">
+                <a href="{{ back_url }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Zurück
+                </a>
+            </div>
+
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square me-2 text-primary"></i>{{ titel }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+                        {% for field in form if field.widget.input_type != 'hidden' and field.name != 'submit' %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ field.label.text }}</label>
+                            {% if field.widget.input_type == 'checkbox' %}
+                                <div class="form-check">
+                                    {{ field(class="form-check-input") }}
+                                    <label class="form-check-label">Ja</label>
+                                </div>
+                            {% elif field.type == 'SelectField' %}
+                                {{ field(class="form-select" + (" is-invalid" if field.errors else "")) }}
+                            {% elif field.type == 'TextAreaField' %}
+                                {{ field(class="form-control" + (" is-invalid" if field.errors else ""), rows=3) }}
+                            {% else %}
+                                {{ field(class="form-control" + (" is-invalid" if field.errors else "")) }}
+                            {% endif %}
+                            {% for e in field.errors %}
+                                <div class="invalid-feedback">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+
+                        <div class="d-flex gap-2">
+                            {{ form.submit(class="btn btn-primary btn-glow flex-grow-1") }}
+                            <a href="{{ back_url }}" class="btn btn-outline-secondary">Abbrechen</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

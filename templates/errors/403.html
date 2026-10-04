@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}403 – Zugriff verweigert{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-center min-vh-100 text-center">
+    <div>
+        <div class="display-1 fw-bold text-danger mb-3">403</div>
+        <h2 class="h4 mb-2">Zugriff verweigert</h2>
+        <p class="text-muted mb-4">Sie haben keine Berechtigung, diese Seite zu besuchen.</p>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-glow">
+            <i class="bi bi-house me-2"></i>Zum Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ titel }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9 col-lg-7">
+            <div class="mb-3">
+                <a href="{{ url_for('admin.benutzer_liste') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Zurück zur Übersicht
+                </a>
+            </div>
+
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-gear me-2 text-primary"></i>{{ titel }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <h6 class="text-muted fw-semibold mb-3 border-bottom border-secondary pb-2">
+                            <i class="bi bi-shield me-1"></i>Zugangsdaten
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.benutzername.label.text }}</label>
+                                {{ form.benutzername(class="form-control" + (" is-invalid" if form.benutzername.errors else "")) }}
+                                {% for e in form.benutzername.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.email.label.text }}</label>
+                                {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else "")) }}
+                                {% for e in form.email.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.passwort.label.text }}</label>
+                                {{ form.passwort(class="form-control" + (" is-invalid" if form.passwort.errors else "")) }}
+                                {% for e in form.passwort.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{{ form.rolle.label.text }}</label>
+                                {{ form.rolle(class="form-select" + (" is-invalid" if form.rolle.errors else "")) }}
+                                {% for e in form.rolle.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <div class="form-check mb-1">
+                                    {{ form.aktiv(class="form-check-input") }}
+                                    <label class="form-check-label">{{ form.aktiv.label.text }}</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="text-muted fw-semibold mb-3 border-bottom border-secondary pb-2">
+                            <i class="bi bi-person me-1"></i>Persönliche Daten
+                        </h6>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.vorname.label.text }}</label>
+                                {{ form.vorname(class="form-control" + (" is-invalid" if form.vorname.errors else "")) }}
+                                {% for e in form.vorname.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.nachname.label.text }}</label>
+                                {{ form.nachname(class="form-control" + (" is-invalid" if form.nachname.errors else "")) }}
+                                {% for e in form.nachname.errors %}<div class="invalid-feedback">{{ e }}</div>{% endfor %}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ form.personalnummer.label.text }}</label>
+                                {{ form.personalnummer(class="form-control") }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ form.eintrittsdatum.label.text }}</label>
+                                {{ form.eintrittsdatum(class="form-control") }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">{{ form.telefon.label.text }}</label>
+                                {{ form.telefon(class="form-control") }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.position.label.text }}</label>
+                                {{ form.position(class="form-control") }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.abteilung_id.label.text }}</label>
+                                {{ form.abteilung_id(class="form-select") }}
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            {{ form.submit(class="btn btn-primary btn-glow") }}
+                            <a href="{{ url_for('admin.benutzer_liste') }}" class="btn btn-outline-secondary">
+                                Abbrechen
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

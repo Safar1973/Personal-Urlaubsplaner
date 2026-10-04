@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Teamkalender{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/main.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 fw-bold mb-0">
+            <i class="bi bi-calendar3 me-2 text-primary"></i>Teamkalender
+        </h1>
+        <a href="{{ url_for('urlaub.neu') }}" class="btn btn-primary btn-glow">
+            <i class="bi bi-plus-circle me-2"></i>Urlaub beantragen
+        </a>
+    </div>
+
+    <!-- Legende -->
+    <div class="card glass-card mb-4">
+        <div class="card-body py-2">
+            <div class="d-flex flex-wrap gap-3 align-items-center">
+                <small class="text-muted fw-semibold me-2">Legende:</small>
+                <span class="legend-item">
+                    <span class="legend-dot" style="background:#4A90D9"></span>
+                    <small>Jahresurlaub</small>
+                </span>
+                <span class="legend-item">
+                    <span class="legend-dot" style="background:#E74C3C"></span>
+                    <small>Krankheit</small>
+                </span>
+                <span class="legend-item">
+                    <span class="legend-dot" style="background:#9B59B6"></span>
+                    <small>Sonderurlaub</small>
+                </span>
+                <span class="legend-item">
+                    <span class="legend-dot" style="background:#2ECC71"></span>
+                    <small>Homeoffice</small>
+                </span>
+                <span class="legend-item">
+                    <span class="legend-dot" style="background:#6c757d; opacity:0.5"></span>
+                    <small>Feiertag</small>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card glass-card">
+        <div class="card-body p-3">
+            <div id="kalender"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Event-Detail-Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content glass-card border-0">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="eventModalTitle"></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="eventModalBody"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/locales/de.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('kalender');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'de',
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listMonth'
+        },
+        buttonText: {
+            today: 'Heute',
+            month: 'Monat',
+            week: 'Woche',
+            list: 'Liste'
+        },
+        events: '{{ url_for("main.kalender_daten") }}',
+        eventClick: function(info) {
+            const props = info.event.extendedProps;
+            if (props.mitarbeiter) {
+                document.getElementById('eventModalTitle').textContent = info.event.title;
+                document.getElementById('eventModalBody').innerHTML = `
+                    <p class="mb-1"><strong>Mitarbeiter:</strong> ${props.mitarbeiter}</p>
+                    <p class="mb-1"><strong>Art:</strong> ${props.art}</p>
+                    <p class="mb-0"><strong>Arbeitstage:</strong> ${props.tage}</p>
+                `;
+                new bootstrap.Modal(document.getElementById('eventModal')).show();
+            }
+        },
+        eventTimeFormat: false,
+        displayEventTime: false,
+        height: 'auto',
+        firstDay: 1,
+    });
+    calendar.render();
+});
+</script>
+{% endblock %}

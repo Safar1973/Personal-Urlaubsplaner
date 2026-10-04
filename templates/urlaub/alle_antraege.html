@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Alle Anträge{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h2 class="h4 fw-bold mb-0">
+            <i class="bi bi-inbox me-2 text-primary"></i>Alle Urlaubsanträge
+        </h2>
+    </div>
+
+    <!-- Filter -->
+    <div class="card glass-card mb-4">
+        <div class="card-body py-2">
+            <form method="GET" class="row g-2 align-items-center">
+                <div class="col-auto">
+                    <label class="col-form-label text-muted small">Status:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Alle</option>
+                        <option value="ausstehend" {% if status_filter == 'ausstehend' %}selected{% endif %}>Ausstehend</option>
+                        <option value="genehmigt" {% if status_filter == 'genehmigt' %}selected{% endif %}>Genehmigt</option>
+                        <option value="abgelehnt" {% if status_filter == 'abgelehnt' %}selected{% endif %}>Abgelehnt</option>
+                        <option value="storniert" {% if status_filter == 'storniert' %}selected{% endif %}>Storniert</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label class="col-form-label text-muted small">Mitarbeiter:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="mitarbeiter_id" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="">Alle</option>
+                        {% for m in alle_mitarbeiter %}
+                        <option value="{{ m.id }}" {% if mitarbeiter_filter == m.id %}selected{% endif %}>
+                            {{ m.vollname }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <a href="{{ url_for('urlaub.alle_antraege') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Zurücksetzen
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if antraege %}
+    <div class="card glass-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Mitarbeiter</th>
+                            <th>Art</th>
+                            <th>Von</th>
+                            <th>Bis</th>
+                            <th class="text-center">Tage</th>
+                            <th class="text-center">Status</th>
+                            <th>Eingereicht</th>
+                            <th class="text-end">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for antrag in antraege %}
+                        <tr>
+                            <td class="text-muted small">{{ antrag.id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-circle-sm">
+                                        {{ antrag.mitarbeiter.vorname[0] }}{{ antrag.mitarbeiter.nachname[0] }}
+                                    </div>
+                                    {{ antrag.mitarbeiter.vollname }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="color-dot me-1"
+                                      style="background:{{ antrag.abwesenheitsart.farbe }}"></span>
+                                {{ antrag.abwesenheitsart.name }}
+                            </td>
+                            <td>{{ antrag.datum_von.strftime('%d.%m.%Y') }}</td>
+                            <td>{{ antrag.datum_bis.strftime('%d.%m.%Y') }}</td>
+                            <td class="text-center fw-semibold">{{ antrag.anzahl_tage|int }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-{{ antrag_status_farbe(antrag.status) }}">
+                                    {{ antrag.status|capitalize }}
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ antrag.erstellt_am.strftime('%d.%m.%Y') }}</td>
+                            <td class="text-end">
+                                <div class="d-flex gap-1 justify-content-end">
+                                    <a href="{{ url_for('urlaub.detail', antrag_id=antrag.id) }}"
+                                       class="btn btn-sm btn-outline-secondary" title="Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if antrag.status == 'ausstehend' %}
+                                    <form method="POST" action="{{ url_for('urlaub.genehmigen', antrag_id=antrag.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-success" title="Genehmigen">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </form>
+                                    <a href="{{ url_for('urlaub.ablehnen', antrag_id=antrag.id) }}"
+                                       class="btn btn-sm btn-danger" title="Ablehnen">
+                                        <i class="bi bi-x-lg"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card glass-card">
+        <div class="card-body text-center py-5 text-muted">
+            <i class="bi bi-inbox display-3 d-block mb-3 opacity-50"></i>
+            Keine Anträge für diesen Filter gefunden
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Urlaubskontingente{% endblock %}
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h2 class="h4 fw-bold mb-0">
+            <i class="bi bi-pie-chart me-2 text-primary"></i>Urlaubskontingente {{ jahr }}
+        </h2>
+        <div class="d-flex gap-2 align-items-center">
+            <form method="GET" class="d-flex gap-2">
+                <select name="jahr" class="form-select form-select-sm" onchange="this.form.submit()">
+                    {% for j in range(2024, aktuelles_jahr + 2) %}
+                    <option value="{{ j }}" {% if j == jahr %}selected{% endif %}>{{ j }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div class="card glass-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Mitarbeiter</th>
+                            <th>Abteilung</th>
+                            <th class="text-center">Gesamttage</th>
+                            <th class="text-center">Übertrag</th>
+                            <th class="text-center">Genommen</th>
+                            <th class="text-center">Rest</th>
+                            <th class="text-center">Fortschritt</th>
+                            {% if current_user.ist_admin %}<th class="text-end">Aktionen</th>{% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for k in kontingente %}
+                    {% set gesamt = k.gesamttage + k.uebertrag %}
+                    {% set pct = ((k.genommene_tage / gesamt) * 100)|round(0)|int if gesamt > 0 else 0 %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="avatar-circle-sm">
+                                    {{ k.mitarbeiter.vorname[0] }}{{ k.mitarbeiter.nachname[0] }}
+                                </div>
+                                {{ k.mitarbeiter.vollname }}
+                            </div>
+                        </td>
+                        <td class="text-muted small">{{ k.mitarbeiter.abteilung.name if k.mitarbeiter.abteilung else '–' }}</td>
+                        <td class="text-center">{{ k.gesamttage|int }}</td>
+                        <td class="text-center text-success">+{{ k.uebertrag|int }}</td>
+                        <td class="text-center text-warning">{{ k.genommene_tage|int }}</td>
+                        <td class="text-center fw-bold {% if k.resttage < 5 %}text-danger{% else %}text-success{% endif %}">
+                            {{ k.resttage|int }}
+                        </td>
+                        <td style="min-width: 120px;">
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar {% if pct > 90 %}bg-danger{% elif pct > 70 %}bg-warning{% else %}bg-success{% endif %}"
+                                     style="width: {{ pct }}%"></div>
+                            </div>
+                            <small class="text-muted">{{ pct }}%</small>
+                        </td>
+                        {% if current_user.ist_admin %}
+                        <td class="text-end">
+                            <a href="{{ url_for('admin.kontingent_bearbeiten', k_id=k.id) }}"
+                               class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

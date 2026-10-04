@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Meine Anträge{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="h4 fw-bold mb-1">
+                <i class="bi bi-journal-text me-2 text-primary"></i>Meine Urlaubsanträge
+            </h2>
+            <p class="text-muted mb-0 small">Resturlaub: <strong class="text-success">{{ urlaub_info.resttage|int }}</strong> Tage verfügbar</p>
+        </div>
+        <a href="{{ url_for('urlaub.neu') }}" class="btn btn-primary btn-glow">
+            <i class="bi bi-plus-circle me-2"></i>Neuer Antrag
+        </a>
+    </div>
+
+    <!-- Statistik-Badges -->
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+        {% set ausstehend_n = antraege|selectattr('status','eq','ausstehend')|list|length %}
+        {% set genehmigt_n = antraege|selectattr('status','eq','genehmigt')|list|length %}
+        {% set abgelehnt_n = antraege|selectattr('status','eq','abgelehnt')|list|length %}
+        <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+            <i class="bi bi-clock me-1"></i>{{ ausstehend_n }} Ausstehend
+        </span>
+        <span class="badge bg-success fs-6 px-3 py-2">
+            <i class="bi bi-check-circle me-1"></i>{{ genehmigt_n }} Genehmigt
+        </span>
+        <span class="badge bg-danger fs-6 px-3 py-2">
+            <i class="bi bi-x-circle me-1"></i>{{ abgelehnt_n }} Abgelehnt
+        </span>
+    </div>
+
+    {% if antraege %}
+    <div class="card glass-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Art</th>
+                            <th>Von</th>
+                            <th>Bis</th>
+                            <th class="text-center">Tage</th>
+                            <th class="text-center">Status</th>
+                            <th>Kommentar</th>
+                            <th class="text-end">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for antrag in antraege %}
+                        <tr>
+                            <td>
+                                <span class="color-dot me-1"
+                                      style="background:{{ antrag.abwesenheitsart.farbe }}"></span>
+                                {{ antrag.abwesenheitsart.name }}
+                            </td>
+                            <td>{{ antrag.datum_von.strftime('%d.%m.%Y') }}</td>
+                            <td>{{ antrag.datum_bis.strftime('%d.%m.%Y') }}</td>
+                            <td class="text-center fw-semibold">{{ antrag.anzahl_tage|int }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-{{ antrag_status_farbe(antrag.status) }}">
+                                    {{ antrag.status|capitalize }}
+                                </span>
+                            </td>
+                            <td class="text-muted small">
+                                {% if antrag.ablehnungsgrund %}
+                                    <span class="text-danger">{{ antrag.ablehnungsgrund[:60] }}{% if antrag.ablehnungsgrund|length > 60 %}…{% endif %}</span>
+                                {% elif antrag.kommentar %}
+                                    {{ antrag.kommentar[:60] }}{% if antrag.kommentar|length > 60 %}…{% endif %}
+                                {% else %}–{% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex gap-1 justify-content-end">
+                                    <a href="{{ url_for('urlaub.detail', antrag_id=antrag.id) }}"
+                                       class="btn btn-sm btn-outline-secondary" title="Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if antrag.status in ('ausstehend', 'genehmigt') %}
+                                    <form method="POST" action="{{ url_for('urlaub.stornieren', antrag_id=antrag.id) }}"
+                                          onsubmit="return confirm('Antrag wirklich stornieren?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Stornieren">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card glass-card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-inbox display-3 text-muted d-block mb-3"></i>
+            <h5 class="text-muted">Noch keine Anträge vorhanden</h5>
+            <p class="text-muted">Beantragen Sie Ihren ersten Urlaub!</p>
+            <a href="{{ url_for('urlaub.neu') }}" class="btn btn-primary btn-glow">
+                <i class="bi bi-plus-circle me-2"></i>Urlaub beantragen
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

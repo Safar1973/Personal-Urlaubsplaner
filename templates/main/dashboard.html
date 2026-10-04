@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+
+    <!-- ─── Begrüßung ──────────────────────────────────────────────────────── -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h1 class="h3 mb-1 fw-bold">
+                Guten Tag, {{ current_user.mitarbeiter.vorname }}!
+            </h1>
+            <p class="text-muted mb-0">
+                <i class="bi bi-calendar3 me-1"></i>
+                {{ heute.strftime('%A, %d. %B %Y') }}
+                {% if current_user.mitarbeiter.abteilung %}
+                    &nbsp;·&nbsp;
+                    <i class="bi bi-building me-1"></i>{{ current_user.mitarbeiter.abteilung.name }}
+                {% endif %}
+            </p>
+        </div>
+        <a href="{{ url_for('urlaub.neu') }}" class="btn btn-primary btn-glow">
+            <i class="bi bi-plus-circle me-2"></i>Urlaub beantragen
+        </a>
+    </div>
+
+    <!-- ─── Urlaubsstatistik-Karten ───────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-blue">
+                <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+                <div class="stat-value">{{ urlaub_info.gesamttage|int }}</div>
+                <div class="stat-label">Urlaubstage {{ jahr }}</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-green">
+                <div class="stat-icon"><i class="bi bi-arrow-up-circle"></i></div>
+                <div class="stat-value">{{ urlaub_info.uebertrag|int }}</div>
+                <div class="stat-label">Übertrag Vorjahr</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card stat-card-orange">
+                <div class="stat-icon"><i class="bi bi-check2-all"></i></div>
+                <div class="stat-value">{{ urlaub_info.genommene_tage|int }}</div>
+                <div class="stat-label">Genommene Tage</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="stat-card {% if urlaub_info.resttage < 5 %}stat-card-red{% else %}stat-card-purple{% endif %}">
+                <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+                <div class="stat-value">{{ urlaub_info.resttage|int }}</div>
+                <div class="stat-label">Resturlaub</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Urlaubsfortschrittsbalken ────────────────────────────────────── -->
+    {% if urlaub_info.gesamttage > 0 %}
+    <div class="card glass-card mb-4">
+        <div class="card-body py-3">
+            <div class="d-flex justify-content-between mb-1">
+                <small class="text-muted">Urlaubsverbrauch {{ jahr }}</small>
+                <small class="text-muted">
+                    {{ urlaub_info.genommene_tage|int }} / {{ (urlaub_info.gesamttage + urlaub_info.uebertrag)|int }} Tage
+                </small>
+            </div>
+            {% set pct = ((urlaub_info.genommene_tage / (urlaub_info.gesamttage + urlaub_info.uebertrag)) * 100)|round(1) if (urlaub_info.gesamttage + urlaub_info.uebertrag) > 0 else 0 %}
+            <div class="progress" style="height: 10px;">
+                <div class="progress-bar bg-primary progress-bar-striped progress-bar-animated"
+                     role="progressbar" style="width: {{ pct }}%"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+
+        <!-- ─── Meine letzten Anträge ─────────────────────────────────────── -->
+        <div class="col-lg-6">
+            <div class="card glass-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-journal-text me-2 text-primary"></i>Meine Anträge</h5>
+                    <a href="{{ url_for('urlaub.meine_antraege') }}" class="btn btn-sm btn-outline-primary">
+                        Alle anzeigen
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if meine_antraege %}
+                    <div class="list-group list-group-flush">
+                        {% for antrag in meine_antraege %}
+                        <a href="{{ url_for('urlaub.detail', antrag_id=antrag.id) }}"
+                           class="list-group-item list-group-item-action list-group-item-dark py-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fw-semibold">{{ antrag.abwesenheitsart.name }}</div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar-range me-1"></i>
+                                        {{ antrag.datum_von.strftime('%d.%m.%Y') }} –
+                                        {{ antrag.datum_bis.strftime('%d.%m.%Y') }}
+                                        ({{ antrag.anzahl_tage|int }} AT)
+                                    </small>
+                                </div>
+                                <span class="badge bg-{{ antrag.status|replace('ausstehend','warning')|replace('genehmigt','success')|replace('abgelehnt','danger')|replace('storniert','secondary') }} ms-2">
+                                    {{ antrag.status|capitalize }}
+                                </span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox display-4 d-block mb-2 opacity-50"></i>
+                        Noch keine Anträge vorhanden
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ─── Ausstehende Anträge (Manager) ────────────────────────────── -->
+        {% if current_user.ist_manager %}
+        <div class="col-lg-6">
+            <div class="card glass-card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-inbox me-2 text-warning"></i>Ausstehende Anträge
+                        {% if ausstehende %}
+                        <span class="badge bg-warning text-dark ms-1">{{ ausstehende|length }}</span>
+                        {% endif %}
+                    </h5>
+                    <a href="{{ url_for('urlaub.alle_antraege', status='ausstehend') }}"
+                       class="btn btn-sm btn-outline-warning">Alle</a>
+                </div>
+                <div class="card-body p-0">
+                    {% if ausstehende %}
+                    <div class="list-group list-group-flush">
+                        {% for antrag in ausstehende[:5] %}
+                        <div class="list-group-item list-group-item-dark py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">{{ antrag.mitarbeiter.vollname }}</div>
+                                    <small class="text-muted">
+                                        {{ antrag.abwesenheitsart.name }} ·
+                                        {{ antrag.datum_von.strftime('%d.%m') }} –
+                                        {{ antrag.datum_bis.strftime('%d.%m.%Y') }}
+                                        ({{ antrag.anzahl_tage|int }} AT)
+                                    </small>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <form method="POST" action="{{ url_for('urlaub.genehmigen', antrag_id=antrag.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-success" title="Genehmigen">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </form>
+                                    <a href="{{ url_for('urlaub.ablehnen', antrag_id=antrag.id) }}"
+                                       class="btn btn-sm btn-danger" title="Ablehnen">
+                                        <i class="bi bi-x-lg"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-check-circle display-4 d-block mb-2 opacity-50 text-success"></i>
+                        Keine ausstehenden Anträge
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ─── Team heute abwesend ───────────────────────────────────────── -->
+        <div class="col-12">
+            <div class="card glass-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people me-2 text-info"></i>Heute abwesend
+                        {% if team_heute %}
+                        <span class="badge bg-info text-dark ms-1">{{ team_heute|length }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if team_heute %}
+                    <div class="row g-3">
+                        {% for antrag in team_heute %}
+                        <div class="col-sm-6 col-md-4 col-lg-3">
+                            <div class="absence-chip">
+                                <div class="absence-color-dot"
+                                     style="background: {{ antrag.abwesenheitsart.farbe }}"></div>
+                                <div>
+                                    <div class="fw-semibold">{{ antrag.mitarbeiter.vollname }}</div>
+                                    <small class="text-muted">{{ antrag.abwesenheitsart.name }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-emoji-smile me-1 text-success"></i>
+                        Alle Mitarbeiter sind heute anwesend.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

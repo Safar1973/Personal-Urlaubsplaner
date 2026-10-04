@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Urlaub beantragen{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            <div class="page-header mb-4">
+                <h2 class="h4 mb-1 fw-bold">
+                    <i class="bi bi-plus-circle me-2 text-primary"></i>Urlaub beantragen
+                </h2>
+                <p class="text-muted small mb-0">Füllen Sie das Formular aus und reichen Sie Ihren Antrag ein.</p>
+            </div>
+
+            <!-- Resturlaub-Anzeige -->
+            <div class="alert glass-alert alert-info mb-4">
+                <div class="d-flex justify-content-between">
+                    <span><i class="bi bi-info-circle me-2"></i>Ihr verfügbarer Resturlaub {{ urlaub_info.resttage|int + urlaub_info.genommene_tage|int | default(0) }}:</span>
+                    <strong class="text-info">{{ urlaub_info.resttage|int }} Arbeitstage</strong>
+                </div>
+            </div>
+
+            <div class="card glass-card">
+                <div class="card-body p-4">
+                    <form method="POST" novalidate id="urlaubsForm">
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-tag me-1"></i>{{ form.abwesenheitsart_id.label.text }}
+                            </label>
+                            {{ form.abwesenheitsart_id(class="form-select" +
+                               (" is-invalid" if form.abwesenheitsart_id.errors else "")) }}
+                            {% for e in form.abwesenheitsart_id.errors %}
+                                <div class="invalid-feedback">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-event me-1"></i>{{ form.datum_von.label.text }}
+                                </label>
+                                {{ form.datum_von(class="form-control" +
+                                   (" is-invalid" if form.datum_von.errors else ""),
+                                   id="datumVon") }}
+                                {% for e in form.datum_von.errors %}
+                                    <div class="invalid-feedback">{{ e }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">
+                                    <i class="bi bi-calendar-event me-1"></i>{{ form.datum_bis.label.text }}
+                                </label>
+                                {{ form.datum_bis(class="form-control" +
+                                   (" is-invalid" if form.datum_bis.errors else ""),
+                                   id="datumBis") }}
+                                {% for e in form.datum_bis.errors %}
+                                    <div class="invalid-feedback">{{ e }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Live-Berechnung -->
+                        <div class="alert alert-secondary py-2 mb-3" id="tageAnzeige" style="display:none">
+                            <i class="bi bi-calculator me-2"></i>
+                            Geschätzte Arbeitstage: <strong id="tageZahl">–</strong>
+                            <small class="text-muted ms-1">(ohne Wochenenden, Feiertage werden serverseitig geprüft)</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-chat-left-text me-1"></i>{{ form.kommentar.label.text }}
+                            </label>
+                            {{ form.kommentar(class="form-control" +
+                               (" is-invalid" if form.kommentar.errors else ""),
+                               rows=3, placeholder="Optional: Hinweise oder Begründung...") }}
+                            {% for e in form.kommentar.errors %}
+                                <div class="invalid-feedback">{{ e }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            {{ form.submit(class="btn btn-primary btn-glow flex-grow-1") }}
+                            <a href="{{ url_for('urlaub.meine_antraege') }}" class="btn btn-outline-secondary">
+                                Abbrechen
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function arbeitstage(von, bis) {
+    let count = 0;
+    let cur = new Date(von);
+    const end = new Date(bis);
+    while (cur <= end) {
+        const day = cur.getDay();
+        if (day !== 0 && day !== 6) count++;
+        cur.setDate(cur.getDate() + 1);
+    }
+    return count;
+}
+
+function aktualisiereAnzeige() {
+    const von = document.getElementById('datumVon').value;
+    const bis = document.getElementById('datumBis').value;
+    const box = document.getElementById('tageAnzeige');
+    if (von && bis && von <= bis) {
+        const tage = arbeitstage(von, bis);
+        document.getElementById('tageZahl').textContent = tage;
+        box.style.display = 'block';
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+document.getElementById('datumVon').addEventListener('change', aktualisiereAnzeige);
+document.getElementById('datumBis').addEventListener('change', aktualisiereAnzeige);
+
+// Mindestdatum = heute
+const heute = new Date().toISOString().split('T')[0];
+document.getElementById('datumVon').min = heute;
+document.getElementById('datumBis').min = heute;
+document.getElementById('datumVon').addEventListener('change', function() {
+    document.getElementById('datumBis').min = this.value;
+});
+</script>
+{% endblock %}
